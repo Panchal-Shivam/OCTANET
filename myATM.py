@@ -57,6 +57,12 @@ if 'authenticated' not in st.session_state:
 if 'current_user' not in st.session_state:
     st.session_state.current_user = None
 
+if 'main_menu' not in st.session_state:
+    st.session_state.main_menu = False
+
+if 'transaction_done' not in st.session_state:
+    st.session_state.transaction_done = False
+
 if not st.session_state.authenticated:
     card_number = st.text_input("Enter your card number:")
     pin = st.text_input("Enter your PIN:", type="password")
@@ -70,34 +76,63 @@ if not st.session_state.authenticated:
         st.write(st.session_state.message)
 
 if st.session_state.authenticated and st.session_state.current_user:
-    option = st.selectbox(
-        "Choose an option:",
-        ["Select", "View Balance", "Deposit Money", "Withdraw Money", "Transfer Money", "Transaction History", "Quit"]
-    )
+    if not st.session_state.main_menu:
+        st.session_state.option = st.selectbox(
+            "Choose an option:",
+            ["Select", "View Balance", "Deposit Money", "Withdraw Money", "Transfer Money", "Transaction History", "Quit"]
+        )
+        if st.session_state.option != "Select":
+            st.session_state.main_menu = True
+            st.session_state.transaction_done = False
 
-    if option == "View Balance":
+    if st.session_state.main_menu:
+        if st.session_state.option == "View Balance":
+            st.write(atm.view_balance())
+            st.session_state.main_menu = False
+
+        elif st.session_state.option == "Deposit Money":
+            amount = st.number_input("Enter amount to deposit (INR):", min_value=0.0, step=100.0)
+            if st.button("Deposit"):
+                st.write(atm.deposit_money(amount))
+                st.session_state.transaction_done = True
+
+        elif st.session_state.option == "Withdraw Money":
+            amount = st.number_input("Enter amount to withdraw (INR):", min_value=0.0, step=100.0)
+            if st.button("Withdraw"):
+                st.write(atm.withdraw_money(amount))
+                st.session_state.transaction_done = True
+
+        elif st.session_state.option == "Transfer Money":
+            target_card = st.text_input("Enter the target card number:")
+            amount = st.number_input("Enter amount to transfer (INR):", min_value=0.0, step=100.0)
+            if st.button("Transfer"):
+                st.write(atm.transfer_money(target_card, amount))
+                st.session_state.transaction_done = True
+
+        elif st.session_state.option == "Transaction History":
+            st.write(atm.transaction_history())
+            st.session_state.main_menu = False
+
+        elif st.session_state.option == "Quit":
+            st.session_state.authenticated = False
+            st.session_state.current_user = None
+            st.session_state.main_menu = False
+            st.session_state.option = "Select"
+            st.write("Thank you for using the ATM. Goodbye!")
+
+if st.session_state.transaction_done:
+    see_balance = st.radio("Do you want to see your balance?", ("Yes", "No"))
+    if see_balance == "Yes":
         st.write(atm.view_balance())
-    elif option == "Deposit Money":
-        amount = st.number_input("Enter amount to deposit (INR):", min_value=0.0, step=100.0)
-        if st.button("Deposit"):
-            st.write(atm.deposit_money(amount))
-    elif option == "Withdraw Money":
-        amount = st.number_input("Enter amount to withdraw (INR):", min_value=0.0, step=100.0)
-        if st.button("Withdraw"):
-            st.write(atm.withdraw_money(amount))
-    elif option == "Transfer Money":
-        target_card = st.text_input("Enter the target card number:")
-        amount = st.number_input("Enter amount to transfer (INR):", min_value=0.0, step=100.0)
-        if st.button("Transfer"):
-            st.write(atm.transfer_money(target_card, amount))
-    elif option == "Transaction History":
-        st.write(atm.transaction_history())
-    elif option == "Quit":
+
+    next_step = st.radio("What would you like to do next?", ("Return to Main Menu", "Quit"))
+    if next_step == "Return to Main Menu":
+        st.session_state.main_menu = False
+        st.session_state.transaction_done = False
+    elif next_step == "Quit":
         st.session_state.authenticated = False
         st.session_state.current_user = None
+        st.session_state.main_menu = False
+        st.session_state.transaction_done = False
+        st.session_state.option = "Select"
         st.write("Thank you for using the ATM. Goodbye!")
-
-    # Adding an option to return to the main menu after each transaction
-    if option in ["View Balance", "Deposit Money", "Withdraw Money", "Transfer Money", "Transaction History"]:
-        if st.button("Return to Main Menu"):
-            st.session_state.option = "Select"
