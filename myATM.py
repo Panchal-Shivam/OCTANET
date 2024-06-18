@@ -74,6 +74,7 @@ if st.session_state.authenticated and st.session_state.current_user:
             amount = st.number_input("Enter amount to deposit (INR):", min_value=0.0, step=100.0)
             if st.button("Deposit"):
                 st.write(atm.deposit_money(amount))
+                st.session_state.display_balance_option = False
                 st.session_state.transaction_done = True
 
         elif st.session_state.option == "Quit":
@@ -84,21 +85,17 @@ if st.session_state.authenticated and st.session_state.current_user:
             st.write("Thank you for using the ATM. Goodbye!")
 
 if st.session_state.transaction_done:
-    if 'display_balance_option' not in st.session_state:
-        see_balance = st.radio("Do you want to see your balance?", ("Yes", "No"))
-        if see_balance == "Yes":
-            st.write(atm.view_balance())
-            st.session_state.display_balance_option = True
-    else:
-        next_step = st.radio("What would you like to do next?", ("Return to Main Menu", "Quit"))
-        if next_step == "Return to Main Menu":
-            st.session_state.main_menu = False
-            st.session_state.transaction_done = False
-            st.session_state.display_balance_option = False
-        elif next_step == "Quit":
-            st.session_state.authenticated = False
-            st.session_state.current_user = None
-            st.session_state.main_menu = False
-            st.session_state.transaction_done = False
-            st.session_state.option = "Select"
-            st.write("Thank you for using the ATM. Goodbye!")
+    see_balance = st.radio("Do you want to see your balance?", ("Yes", "No"))
+    if see_balance == "Yes":
+        st.write(atm.view_balance())
+    next_step = st.radio("What would you like to do next?", ("Return to Main Menu", "Quit"))
+    if next_step == "Return to Main Menu":
+        st.session_state.main_menu = False
+        st.session_state.transaction_done = False
+    elif next_step == "Quit":
+        st.session_state.authenticated = False
+        st.session_state.current_user = None
+        st.session_state.main_menu = False
+        st.session_state.transaction_done = False
+        st.session_state.option = "Select"
+        st.write("Thank you for using the ATM. Goodbye!")
