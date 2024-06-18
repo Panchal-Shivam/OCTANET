@@ -96,3 +96,8 @@ if st.session_state.authenticated and st.session_state.current_user:
         st.session_state.authenticated = False
         st.session_state.current_user = None
         st.write("Thank you for using the ATM. Goodbye!")
+
+    # Adding an option to return to the main menu after each transaction
+    if option in ["View Balance", "Deposit Money", "Withdraw Money", "Transfer Money", "Transaction History"]:
+        if st.button("Return to Main Menu"):
+            st.session_state.option = "Select"
