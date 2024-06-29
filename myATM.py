@@ -14,20 +14,20 @@ class ATM:
 
     def view_balance(self, user):
         balance = self.users[user]['balance']
-        st.write(f"Your current balance is: ₹{balance}")
+        return f"Your current balance is: ₹{balance}"
 
     def deposit_money(self, user, amount):
         self.users[user]['balance'] += amount
         self.users[user]['transactions'].append(f"Deposited: ₹{amount}")
-        st.write(f"₹{amount} deposited successfully.")
+        return f"₹{amount} deposited successfully."
 
     def withdraw_money(self, user, amount):
         if amount <= self.users[user]['balance']:
             self.users[user]['balance'] -= amount
             self.users[user]['transactions'].append(f"Withdrew: ₹{amount}")
-            st.write(f"₹{amount} withdrawn successfully.")
+            return f"₹{amount} withdrawn successfully."
         else:
-            st.write("Insufficient balance.")
+            return "Insufficient balance."
 
     def transfer_money(self, user, target_card, amount):
         if target_card in self.users and amount <= self.users[user]['balance']:
@@ -35,14 +35,13 @@ class ATM:
             self.users[target_card]['balance'] += amount
             self.users[user]['transactions'].append(f"Transferred ₹{amount} to {target_card}")
             self.users[target_card]['transactions'].append(f"Received ₹{amount} from {user}")
-            st.write(f"₹{amount} transferred successfully.")
+            return f"₹{amount} transferred successfully."
         else:
-            st.write("Transfer failed. Check the card number and balance.")
+            return "Transfer failed. Check the card number and balance."
 
     def transaction_history(self, user):
-        st.write("Transaction History:")
-        for transaction in self.users[user]['transactions']:
-            st.write(transaction)
+        transactions = "\n".join(self.users[user]['transactions'])
+        return f"Transaction History:\n{transactions}"
 
 def main():
     st.title("ATM Interface")
@@ -50,6 +49,8 @@ def main():
 
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
+    if 'action' not in st.session_state:
+        st.session_state.action = None
 
     atm = ATM()
 
@@ -65,39 +66,60 @@ def main():
             else:
                 st.write("Invalid card number or PIN.")
     else:
-        if 'action' not in st.session_state or st.session_state.action is None:
+        if st.session_state.action is None:
             options = ['View Balance', 'Deposit Money', 'Withdraw Money', 'Transfer Money', 'Transaction History', 'Quit']
             choice = st.selectbox("Choose an option:", options)
 
             if choice == 'View Balance':
-                atm.view_balance(st.session_state.user)
+                st.session_state.action = 'view_balance'
             elif choice == 'Deposit Money':
-                amount = st.number_input("Enter amount to deposit (INR): ", min_value=0)
-                if st.button("Deposit"):
-                    atm.deposit_money(st.session_state.user, amount)
-                    st.session_state.action = 'balance_option'
+                st.session_state.action = 'deposit_money'
             elif choice == 'Withdraw Money':
-                amount = st.number_input("Enter amount to withdraw (INR): ", min_value=0)
-                if st.button("Withdraw"):
-                    atm.withdraw_money(st.session_state.user, amount)
-                    st.session_state.action = 'balance_option'
+                st.session_state.action = 'withdraw_money'
             elif choice == 'Transfer Money':
-                target_card = st.text_input("Enter the target card number: ")
-                amount = st.number_input("Enter amount to transfer (INR): ", min_value=0)
-                if st.button("Transfer"):
-                    atm.transfer_money(st.session_state.user, target_card, amount)
-                    st.session_state.action = 'balance_option'
+                st.session_state.action = 'transfer_money'
             elif choice == 'Transaction History':
-                atm.transaction_history(st.session_state.user)
+                st.session_state.action = 'transaction_history'
             elif choice == 'Quit':
                 st.session_state.authenticated = False
                 st.session_state.user = None
                 st.write("Thank you for using the ATM. Goodbye!")
         else:
+            if st.session_state.action == 'view_balance':
+                balance = atm.view_balance(st.session_state.user)
+                st.write(balance)
+                st.session_state.action = 'balance_option'
+            elif st.session_state.action == 'deposit_money':
+                amount = st.number_input("Enter amount to deposit (INR): ", min_value=0)
+                if st.button("Deposit"):
+                    message = atm.deposit_money(st.session_state.user, amount)
+                    st.write(message)
+                    st.session_state.action = 'balance_option'
+            elif st.session_state.action == 'withdraw_money':
+                amount = st.number_input("Enter amount to withdraw (INR): ", min_value=0)
+                if st.button("Withdraw"):
+                    message = atm.withdraw_money(st.session_state.user, amount)
+                    st.write(message)
+                    st.session_state.action = 'balance_option'
+            elif st.session_state.action == 'transfer_money':
+                target_card = st.text_input("Enter the target card number: ")
+                amount = st.number_input("Enter amount to transfer (INR): ", min_value=0)
+                if st.button("Transfer"):
+                    message = atm.transfer_money(st.session_state.user, target_card, amount)
+                    st.write(message)
+                    st.session_state.action = 'balance_option'
+            elif st.session_state.action == 'transaction_history':
+                history = atm.transaction_history(st.session_state.user)
+                st.write(history)
+                st.session_state.action = None
+
+        if st.session_state.action == 'balance_option':
             choice = st.radio("Do you want to see your balance?", ('Yes', 'No'))
-            if choice == 'Yes' and st.button("Show Balance"):
-                atm.view_balance(st.session_state.user)
-            st.session_state.action = None
+            if st.button("Submit"):
+                if choice == 'Yes':
+                    balance = atm.view_balance(st.session_state.user)
+                    st.write(balance)
+                st.session_state.action = None
 
 if __name__ == "__main__":
     main()
