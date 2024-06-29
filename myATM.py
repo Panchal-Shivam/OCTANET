@@ -88,7 +88,7 @@ def main():
             if st.session_state.action == 'view_balance':
                 balance = atm.view_balance(st.session_state.user)
                 st.write(balance)
-                st.session_state.action = 'balance_option'
+                st.session_state.action = None
             elif st.session_state.action == 'deposit_money':
                 amount = st.number_input("Enter amount to deposit (INR): ", min_value=0)
                 if st.button("Deposit"):
