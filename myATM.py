@@ -46,6 +46,7 @@ class ATM:
 
 def main():
     st.title("ATM Interface")
+    st.write("Made by Shivam Panchal")
 
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
@@ -94,7 +95,7 @@ def main():
                 st.write("Thank you for using the ATM. Goodbye!")
         else:
             choice = st.radio("Do you want to see your balance?", ('Yes', 'No'))
-            if choice == 'Yes':
+            if choice == 'Yes' and st.button("Show Balance"):
                 atm.view_balance(st.session_state.user)
             st.session_state.action = None
 
