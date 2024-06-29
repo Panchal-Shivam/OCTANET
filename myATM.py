@@ -62,45 +62,53 @@ def main():
                 st.session_state.authenticated = True
                 st.session_state.user = card_number
                 st.session_state.action = None
+                st.session_state.view_balance = False
                 st.write("Login successful!")
             else:
                 st.write("Invalid card number or PIN.")
     else:
-        options = ['View Balance', 'Deposit Money', 'Withdraw Money', 'Transfer Money', 'Transaction History', 'Quit']
-        choice = st.selectbox("Choose an option:", options)
-
-        if choice == 'View Balance':
+        if st.session_state.view_balance:
             balance = atm.view_balance(st.session_state.user)
             st.write(balance)
-        elif choice == 'Deposit Money':
-            amount = st.number_input("Enter amount to deposit (INR): ", min_value=0)
-            if st.button("Deposit"):
-                message = atm.deposit_money(st.session_state.user, amount)
-                st.write(message)
-        elif choice == 'Withdraw Money':
-            amount = st.number_input("Enter amount to withdraw (INR): ", min_value=0)
-            if st.button("Withdraw"):
-                message = atm.withdraw_money(st.session_state.user, amount)
-                st.write(message)
-        elif choice == 'Transfer Money':
-            target_card = st.text_input("Enter the target card number: ")
-            amount = st.number_input("Enter amount to transfer (INR): ", min_value=0)
-            if st.button("Transfer"):
-                message = atm.transfer_money(st.session_state.user, target_card, amount)
-                st.write(message)
-        elif choice == 'Transaction History':
-            history = atm.transaction_history(st.session_state.user)
-            st.write(history)
-        elif choice == 'Quit':
-            st.session_state.authenticated = False
-            st.session_state.user = None
-            st.write("Thank you for using the ATM. Goodbye!")
+            st.session_state.view_balance = False
+        else:
+            options = ['View Balance', 'Deposit Money', 'Withdraw Money', 'Transfer Money', 'Transaction History', 'Quit']
+            choice = st.selectbox("Choose an option:", options)
 
-        if choice != 'Quit':
-            view_balance = st.radio("Do you want to see your balance?", ('Yes', 'No'))
-            if view_balance == 'Yes':
+            if choice == 'View Balance':
                 balance = atm.view_balance(st.session_state.user)
                 st.write(balance)
+            elif choice == 'Deposit Money':
+                amount = st.number_input("Enter amount to deposit (INR): ", min_value=0)
+                if st.button("Deposit"):
+                    message = atm.deposit_money(st.session_state.user, amount)
+                    st.write(message)
+            elif choice == 'Withdraw Money':
+                amount = st.number_input("Enter amount to withdraw (INR): ", min_value=0)
+                if st.button("Withdraw"):
+                    message = atm.withdraw_money(st.session_state.user, amount)
+                    st.write(message)
+            elif choice == 'Transfer Money':
+                target_card = st.text_input("Enter the target card number: ")
+                amount = st.number_input("Enter amount to transfer (INR): ", min_value=0)
+                if st.button("Transfer"):
+                    message = atm.transfer_money(st.session_state.user, target_card, amount)
+                    st.write(message)
+            elif choice == 'Transaction History':
+                history = atm.transaction_history(st.session_state.user)
+                st.write(history)
+            elif choice == 'Quit':
+                st.session_state.authenticated = False
+                st.session_state.user = None
+                st.write("Thank you for using the ATM. Goodbye!")
+
+            if choice != 'Quit':
+                view_balance = st.radio("Do you want to see your balance?", ('Yes', 'No'))
+                if st.button("Submit"):
+                    if view_balance == 'Yes':
+                        st.session_state.view_balance = True
+                    else:
+                        st.session_state.view_balance = False
 
 if __name__ == "__main__":
     main()
