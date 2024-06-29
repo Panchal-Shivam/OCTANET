@@ -6,107 +6,97 @@ class ATM:
             '123456': {'pin': '1234', 'balance': 5000, 'transactions': []},
             '987654': {'pin': '5678', 'balance': 10000, 'transactions': []}
         }
-        self.current_user = None
 
     def authenticate(self, card_number, pin):
-        if card_number in self.users:
-            if self.users[card_number]['pin'] == pin:
-                self.current_user = card_number
-                return "Login successful!"
-            else:
-                return "Invalid PIN."
+        if card_number in self.users and self.users[card_number]['pin'] == pin:
+            return True
+        return False
+
+    def view_balance(self, user):
+        balance = self.users[user]['balance']
+        st.write(f"Your current balance is: ₹{balance}")
+
+    def deposit_money(self, user, amount):
+        self.users[user]['balance'] += amount
+        self.users[user]['transactions'].append(f"Deposited: ₹{amount}")
+        st.write(f"₹{amount} deposited successfully.")
+
+    def withdraw_money(self, user, amount):
+        if amount <= self.users[user]['balance']:
+            self.users[user]['balance'] -= amount
+            self.users[user]['transactions'].append(f"Withdrew: ₹{amount}")
+            st.write(f"₹{amount} withdrawn successfully.")
         else:
-            return "Invalid card number."
+            st.write("Insufficient balance.")
 
-    def main_menu(self, choice):
-        if choice == '1':
-            return self.view_balance()
-        elif choice == '2':
-            amount = st.number_input("Enter amount to deposit (INR): ")
-            self.deposit_money(amount)
-            return self.ask_see_balance()
-        elif choice == '3':
-            amount = st.number_input("Enter amount to withdraw (INR): ")
-            self.withdraw_money(amount)
-            return self.ask_see_balance()
-        elif choice == '4':
-            target_card = st.text_input("Enter the target card number: ")
-            amount = st.number_input("Enter amount to transfer (INR): ")
-            self.transfer_money(target_card, amount)
-            return self.ask_see_balance()
-        elif choice == '5':
-            return self.transaction_history()
-        elif choice == '6':
-            self.current_user = None
-            return "Thank you for using the ATM. Goodbye!"
-        else:
-            return "Invalid choice. Please try again."
-
-    def view_balance(self):
-        balance = self.users[self.current_user]['balance']
-        return f"Your current balance is: ₹{balance}"
-
-    def deposit_money(self, amount):
-        self.users[self.current_user]['balance'] += amount
-        self.users[self.current_user]['transactions'].append(f"Deposited: ₹{amount}")
-        return f"₹{amount} deposited successfully."
-
-    def withdraw_money(self, amount):
-        if amount <= self.users[self.current_user]['balance']:
-            self.users[self.current_user]['balance'] -= amount
-            self.users[self.current_user]['transactions'].append(f"Withdrew: ₹{amount}")
-            return f"₹{amount} withdrawn successfully."
-        else:
-            return "Insufficient balance."
-
-    def transfer_money(self, target_card, amount):
-        if target_card in self.users and amount <= self.users[self.current_user]['balance']:
-            self.users[self.current_user]['balance'] -= amount
+    def transfer_money(self, user, target_card, amount):
+        if target_card in self.users and amount <= self.users[user]['balance']:
+            self.users[user]['balance'] -= amount
             self.users[target_card]['balance'] += amount
-            self.users[self.current_user]['transactions'].append(f"Transferred ₹{amount} to {target_card}")
-            self.users[target_card]['transactions'].append(f"Received ₹{amount} from {self.current_user}")
-            return f"₹{amount} transferred successfully."
+            self.users[user]['transactions'].append(f"Transferred ₹{amount} to {target_card}")
+            self.users[target_card]['transactions'].append(f"Received ₹{amount} from {user}")
+            st.write(f"₹{amount} transferred successfully.")
         else:
-            return "Transfer failed. Check the card number and balance."
+            st.write("Transfer failed. Check the card number and balance.")
 
-    def transaction_history(self):
-        return "Transaction History:\n" + "\n".join(self.users[self.current_user]['transactions'])
+    def transaction_history(self, user):
+        st.write("Transaction History:")
+        for transaction in self.users[user]['transactions']:
+            st.write(transaction)
 
-    def ask_see_balance(self):
-        choice = st.radio("Do you want to see your balance?", ('Yes', 'No'))
-        if choice == 'Yes':
-            return self.view_balance()
+def main():
+    st.title("ATM Interface")
+
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
+
+    atm = ATM()
+
+    if not st.session_state.authenticated:
+        card_number = st.text_input("Enter your card number:")
+        pin = st.text_input("Enter your PIN:", type="password")
+        if st.button("Login"):
+            if atm.authenticate(card_number, pin):
+                st.session_state.authenticated = True
+                st.session_state.user = card_number
+                st.session_state.action = None
+                st.write("Login successful!")
+            else:
+                st.write("Invalid card number or PIN.")
+    else:
+        if 'action' not in st.session_state or st.session_state.action is None:
+            options = ['View Balance', 'Deposit Money', 'Withdraw Money', 'Transfer Money', 'Transaction History', 'Quit']
+            choice = st.selectbox("Choose an option:", options)
+
+            if choice == 'View Balance':
+                atm.view_balance(st.session_state.user)
+            elif choice == 'Deposit Money':
+                amount = st.number_input("Enter amount to deposit (INR): ", min_value=0)
+                if st.button("Deposit"):
+                    atm.deposit_money(st.session_state.user, amount)
+                    st.session_state.action = 'balance_option'
+            elif choice == 'Withdraw Money':
+                amount = st.number_input("Enter amount to withdraw (INR): ", min_value=0)
+                if st.button("Withdraw"):
+                    atm.withdraw_money(st.session_state.user, amount)
+                    st.session_state.action = 'balance_option'
+            elif choice == 'Transfer Money':
+                target_card = st.text_input("Enter the target card number: ")
+                amount = st.number_input("Enter amount to transfer (INR): ", min_value=0)
+                if st.button("Transfer"):
+                    atm.transfer_money(st.session_state.user, target_card, amount)
+                    st.session_state.action = 'balance_option'
+            elif choice == 'Transaction History':
+                atm.transaction_history(st.session_state.user)
+            elif choice == 'Quit':
+                st.session_state.authenticated = False
+                st.session_state.user = None
+                st.write("Thank you for using the ATM. Goodbye!")
         else:
-            return self.ask_quit_or_menu()
+            choice = st.radio("Do you want to see your balance?", ('Yes', 'No'))
+            if choice == 'Yes':
+                atm.view_balance(st.session_state.user)
+            st.session_state.action = None
 
-    def ask_quit_or_menu(self):
-        choice = st.radio("What would you like to do next?", ('Return to Main Menu', 'Quit'))
-        if choice == 'Quit':
-            self.current_user = None
-            return "Thank you for using the ATM. Goodbye!"
-        else:
-            return self.show_menu()
-
-    def show_menu(self):
-        st.subheader("Main Menu:")
-        options = ['View Balance', 'Deposit Money', 'Withdraw Money', 'Transfer Money', 'Transaction History', 'Quit']
-        choice = st.selectbox("Choose an option:", options)
-        return self.main_menu(str(options.index(choice) + 1))
-
-atm = ATM()
-
-# Main menu loop
-card_number = st.text_input("Enter your card number:")
-pin = st.text_input("Enter your PIN:", type="password")
-message = atm.authenticate(card_number, pin)
-st.write(message)
-
-if atm.current_user:
-    while True:
-        response = atm.show_menu()
-        if response == "Thank you for using the ATM. Goodbye!":
-            break
-        else:
-            st.write(response)
-else:
-    st.warning("Invalid credentials. Please try again.")
+if __name__ == "__main__":
+    main()
